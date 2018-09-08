@@ -1,8 +1,201 @@
 <html>
-<body>
-<form method='GET' action='?'>
-    <input type='text' name='email'/>
-    <input type='submit' name="submit" value='Subscribe'/>
-</form>
-</body>
+    <head>
+        <style>
+            
+        </style>
+    </head>
+    <body style="background-color: lightgray">
+        <h1>Timers</h1>
+        <p>Laps: <input id="laps" tpye="number" value="3"></p>
+        <p>No of exercises: <input id="exercises" type="number" value="3"></p>
+        <p>Active time (s): <input id="activeTime" type="number" value = "30" ></p>
+        <p>Pause time (s): <input id="pauseTime" type="number" value = "15"></p>
+        <p>Extended pause time (s): <input id="extendedPauseTime" type="number" value = "60"></p>
+        <button onclick="go()">Start</button>
+                
+        <h1 id="timeLeft">00:00</h1>
+
+        <script>
+            var orderList = [];
+
+            function go() {
+                buildOrderList();
+
+                window.addEventListener("done", () =>  {
+                    orderList.splice(0, 1);
+                    if (orderList.length > 0) {
+                        orderList[0].start();
+                    }
+                });
+                
+                orderList[0].start();
+            }
+
+            function buildOrderList() {
+                var laps = document.getElementById('laps').value;
+                var exercises = document.getElementById('exercises').value;
+                var activeTime = document.getElementById('activeTime').value;
+                var pauseTime = document.getElementById('pauseTime').value;
+                var extendedPauseTime = document.getElementById('extendedPauseTime').value;
+                
+                orderList.push(new Prepare(5));
+                
+                for (x = 0; x < laps; x += 1) {
+                    for (y = 0; y < exercises; y += 1) {
+                        orderList.push(new Active(activeTime));
+
+                        if (y < exercises - 1) {
+                            orderList.push(new Pause(pauseTime));
+                        }
+
+                    }
+                    if (x <  laps - 1) {
+                        orderList.push(new Pause(extendedPauseTime));
+                    }
+                }
+
+            }
+
+
+            class Timer {
+
+                constructor (duration) {
+                    this.duration = duration * 1000;
+
+                    this.running = false;
+                    this.timeoutLength = 1000;
+                }
+
+                start() {
+                    this.running = true;
+                    this.onTimeout();
+                    this.timeout();
+                }
+
+                timeout() {
+                    setTimeout(() => {
+                        if (this.running) {
+                            this.duration -= this.timeoutLength;
+                            if (this.duration <= 0)
+                            {
+                                this.onDone();
+                                this.running = false;
+                                this.onEnd();
+                            } else {
+                                this.onTimeout();
+                                this.timeout();  
+                            }
+                        }
+                    }, this.timeoutLength);
+                }
+
+                onTimeout() {
+                    console.log("in timeout, duration left of timer: " + this.duration);
+                }
+
+                onDone() {
+                    console.log("done");
+                }
+
+                pause() {
+                    if (this.running) {
+                        console.log("timer paused");
+                        this.running = false;
+                    } else {
+                        console.log("timer started again");
+                        this.running = true;
+                        this.timeout();
+                    }
+                }
+
+                onEnd() {
+                    self.dispatchEvent(new CustomEvent("done"));
+                }
+            }
+
+            class Active extends Timer {
+                onTimeout() {
+                    document.getElementById('timeLeft').innerHTML = "WORK!!!! TIME LEFT: " + secondsToPresentableString(this.duration / 1000);
+                    if (this.duration <= 3000) {
+                        beep();
+                    }
+                }
+
+                onDone() {
+                    document.getElementById('timeLeft').innerHTML = "Finished";
+                    beepLong();
+                }
+            }
+
+            class Pause extends Timer {
+                onTimeout() {
+                    document.getElementById('timeLeft').innerHTML = "PAUSE. YOU SOME SECONDS LEFT..." + secondsToPresentableString(this.duration / 1000);
+                    if (this.duration <= 3000) {
+                        beep();
+                    }
+                }
+
+                onDone() {
+                    document.getElementById('timeLeft').innerHTML = "Finished";
+                    beepLong();
+                }
+            }
+
+            class Prepare extends Timer {
+                onTimeout() {
+                    document.getElementById('timeLeft').innerHTML = "PREPARE!!!!! START IN: " + secondsToPresentableString(this.duration / 1000);
+                    if (this.duration <= 3000) {
+                        beep();
+                    }
+                }
+
+                onDone() {
+                    beepLong();
+                }
+            }
+
+            function secondsToPresentableString(inputSeconds) {
+                var minutes = Math.floor(inputSeconds/60);
+                var seconds = inputSeconds - minutes * 60;
+                return zeroPrefixIfSingleDigit(minutes) + ':' + zeroPrefixIfSingleDigit(seconds);
+            }
+
+            function zeroPrefixIfSingleDigit(number) {
+                if (number < 0) {
+                    throw "WTF FAULTY INPUT";
+                }
+
+                if (number < 10) {
+                    return "0" + number;
+                } else {
+                    return String(number);
+                }
+            }
+
+            function beep() {
+                k(10, 440, 150);
+            }
+
+            function beepLong() {
+                k(10, 880, 300);
+            }
+
+            
+            audio = new AudioContext();
+            // gain, frequency, duration
+            function k(w, x, y){
+                console.log(w + x + y);
+                v = audio.createOscillator();
+                u = audio.createGain();
+                v.connect(u);
+                v.frequency.value = x;
+                v.type = "square";
+                u.connect(audio.destination);
+                u.gain.value = w * 0.01;
+                v.start(audio.currentTime);
+                v.stop(audio.currentTime + y * 0.001);
+            }
+
+        </script>
+    </body>
 </html>
