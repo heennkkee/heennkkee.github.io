@@ -9,7 +9,7 @@
             .style_div {
                 margin: 5px;
                 width: 150px;
-                font-size: 12pt;
+                font-size: 16pt;
             }    
 
             .style_div input {
@@ -17,7 +17,7 @@
                 border: none;
                 outline: none;
                 border-bottom: 1px black solid;
-                font-size: 18pt;
+                font-size: 25pt;
                 width: 140px;
                 color: inherit;
             }
@@ -56,30 +56,44 @@
             .pointer {
                 cursor: pointer;
             }
+
+            #timerDiv p {
+                margin: 5px;
+                font-size: 40pt;
+                font-weight: 800;
+            }
+
+            #timerDiv {
+                transition: max-height 0.2s ease-out;
+            }
+
+            #body {
+                transition: background-color 0.2s ease-out;
+            }
+
         </style>
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-        rel="stylesheet">
-        
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     </head>
-    <body style="background-color: #8fb4e0">
-        <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center;">
+    <body style="background-color: #8fb4e0" id="body"> 
+
+        <div style="position: fixed; bottom: 10px;  right: 10px;"> 
+                <i id="startButton" class="material-icons md-96 pointer" onmousedown="go()">play_circle_filled</i>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; display: none; max-height: 100%" id="timerDiv">
+                <p id="statusText">WORK IT!</p>
+                <p id="timeLeft">01:15</p>
+            </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; height: 80%; justify-content: center;" id="settingsDiv">
             <div class="style_div"><span>Laps</span> <input id="laps" tpye="number" value="3"></div>
             <div class="style_div"><span>Exercises </span> <input id="exercises" type="number" value="3"></div>
             <div class="style_div"><span>Active (s)</span> <input id="activeTime" type="number" value = "30" ></div>
             <div class="style_div"><span>Pause (s)</span> <input id="pauseTime" type="number" value = "15"></div>
             <div class="style_div"><span>Ext. pause (s)</span> <input id="extendedPauseTime" type="number" value = "60"></div>
             <div class="style_div"><span>Volume</span><input id="volume" type="number" onchange="setVolume()" min="0" max="40" value="10"></div>
-        </div>
+        </div>    
 
-
-        <div style="position: fixed; bottom: 10px;  right: 10px;"> 
-               <i id="startButton" class="material-icons md-96 pointer" onmousedown="go()">play_circle_filled</i>
-        </div>
-        
-        
-        
-                
-        <h1 id="timeLeft">00:00</h1>
 
         <script>
             var orderList = [];
@@ -102,10 +116,13 @@
 
             function pause() {
                 orderList[0].pause();
+
                 if (orderList[0].running) {
                     document.getElementById('startButton').innerHTML = "pause_circle_filled";
+                    document.getElementById('timerDiv').style.maxHeight = '100%';
                 } else {
                     document.getElementById('startButton').innerHTML = "play_circle_filled";
+                    document.getElementById('timerDiv').style.maxHeight = '20%';
                 }
             }
 
@@ -121,6 +138,7 @@
                 
                 orderList[0].start();
                 
+                document.getElementById('timerDiv').style.display = 'flex';
                 document.getElementById('startButton').innerHTML = "pause_circle_filled";
                 document.getElementById('startButton').onmousedown = pause;
             }
@@ -162,6 +180,7 @@
 
                 start() {
                     this.running = true;
+                    this.onStart();
                     this.onTimeout();
                     this.timeout();
                 }
@@ -181,6 +200,10 @@
                             }
                         }
                     }, this.timeoutLength);
+                }
+
+                onStart() {
+                    console.log("on start");
                 }
 
                 onTimeout() {
@@ -209,7 +232,9 @@
 
             class Active extends Timer {
                 onTimeout() {
-                    document.getElementById('timeLeft').innerHTML = "WORK! " + secondsToPresentableString(this.duration / 1000);
+                    
+                    document.getElementById('statusText').innerHTML = "WORK IT";
+                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
                     if (this.duration <= 3000) {
                         beep();
                     }
@@ -218,12 +243,17 @@
                 onDone() {
                     document.getElementById('timeLeft').innerHTML = "Finished";
                     beepLong();
+                }
+
+                onStart() {
+                    document.getElementById('body').style.backgroundColor = '#e08f8f';
                 }
             }
 
             class Pause extends Timer {
                 onTimeout() {
-                    document.getElementById('timeLeft').innerHTML = "PAUSE! " + secondsToPresentableString(this.duration / 1000);
+                    document.getElementById('statusText').innerHTML = "PAUSE";
+                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
                     if (this.duration <= 3000) {
                         beep();
                     }
@@ -233,11 +263,16 @@
                     document.getElementById('timeLeft').innerHTML = "Finished";
                     beepLong();
                 }
+
+                onStart() {
+                    document.getElementById('body').style.backgroundColor = '#8fe094';
+                }
             }
 
             class Prepare extends Timer {
                 onTimeout() {
-                    document.getElementById('timeLeft').innerHTML = "PREPARE! " + secondsToPresentableString(this.duration / 1000);
+                    document.getElementById('statusText').innerHTML = "PREPARE";
+                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
                     if (this.duration <= 3000) {
                         beep();
                     }
