@@ -51,14 +51,18 @@
             .material-icons.md-24 { font-size: 24px; }
             .material-icons.md-36 { font-size: 36px; }
             .material-icons.md-48 { font-size: 48px; }
+            .material-icons.md-96 { font-size: 96px; }
 
+            .pointer {
+                cursor: pointer;
+            }
         </style>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
         rel="stylesheet">
         
     </head>
     <body style="background-color: #8fb4e0">
-        <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center;">
             <div class="style_div"><span>Laps</span> <input id="laps" tpye="number" value="3"></div>
             <div class="style_div"><span>Exercises </span> <input id="exercises" type="number" value="3"></div>
             <div class="style_div"><span>Active (s)</span> <input id="activeTime" type="number" value = "30" ></div>
@@ -68,9 +72,10 @@
         </div>
 
 
-        <div class="style_div">
-               <i class="material-icons md-48" onmousedown="go()">play_circle_filled</i><i class="material-icons md-48" onmousedown="pause()">pause_circle_filled</i>
+        <div style="position: fixed; bottom: 10px;  right: 10px;"> 
+               <i id="startButton" class="material-icons md-96 pointer" onmousedown="go()">play_circle_filled</i>
         </div>
+        
         
         
                 
@@ -97,6 +102,11 @@
 
             function pause() {
                 orderList[0].pause();
+                if (orderList[0].running) {
+                    document.getElementById('startButton').innerHTML = "pause_circle_filled";
+                } else {
+                    document.getElementById('startButton').innerHTML = "play_circle_filled";
+                }
             }
 
             function go() {
@@ -110,6 +120,9 @@
                 });
                 
                 orderList[0].start();
+                
+                document.getElementById('startButton').innerHTML = "pause_circle_filled";
+                document.getElementById('startButton').onmousedown = pause;
             }
 
             function buildOrderList() {
@@ -196,7 +209,7 @@
 
             class Active extends Timer {
                 onTimeout() {
-                    document.getElementById('timeLeft').innerHTML = "WORK!!!! TIME LEFT: " + secondsToPresentableString(this.duration / 1000);
+                    document.getElementById('timeLeft').innerHTML = "WORK! " + secondsToPresentableString(this.duration / 1000);
                     if (this.duration <= 3000) {
                         beep();
                     }
@@ -210,7 +223,7 @@
 
             class Pause extends Timer {
                 onTimeout() {
-                    document.getElementById('timeLeft').innerHTML = "PAUSE. YOU SOME SECONDS LEFT..." + secondsToPresentableString(this.duration / 1000);
+                    document.getElementById('timeLeft').innerHTML = "PAUSE! " + secondsToPresentableString(this.duration / 1000);
                     if (this.duration <= 3000) {
                         beep();
                     }
@@ -224,7 +237,7 @@
 
             class Prepare extends Timer {
                 onTimeout() {
-                    document.getElementById('timeLeft').innerHTML = "PREPARE!!!!! START IN: " + secondsToPresentableString(this.duration / 1000);
+                    document.getElementById('timeLeft').innerHTML = "PREPARE! " + secondsToPresentableString(this.duration / 1000);
                     if (this.duration <= 3000) {
                         beep();
                     }
