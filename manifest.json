@@ -3,7 +3,12 @@
     "name": "Intervals",
     "icons": [
       {
-        "src": "/images/timer-96.png",
+        "src": "/images/timer-96-black.png",
+        "type": "image/png",
+        "sizes": "96x96"
+      },
+      {
+        "src": "/images/timer-96-white.png",
         "type": "image/png",
         "sizes": "96x96"
       }
