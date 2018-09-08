@@ -109,10 +109,13 @@
         </div>    
 
 
+        <script src="NoSleep.min.js"></script>
         <script>
             var orderList = [];
-
             var volume = 10;
+
+            var noSleep = new NoSleep();
+           
 
             function initiate() {
 
@@ -164,15 +167,19 @@
                 if (orderList[0].running) {
                     document.getElementById('startButton').innerHTML = "pause_circle_filled";
                     document.getElementById('timerDiv').style.maxHeight = '100%';
+                    noSleep.enable();
                 } else {
                     document.getElementById('startButton').innerHTML = "play_circle_filled";
                     document.getElementById('timerDiv').style.maxHeight = '20%';
+                    noSleep.disable();
                 }
             }
 
             function go() {
                 buildOrderList();
                 
+                noSleep.enable();
+
                 orderList[0].start();
                 
                 document.getElementById('restoreButton').style.display = '';
@@ -371,7 +378,6 @@
                 v.start(audio.currentTime);
                 v.stop(audio.currentTime + y * 0.001);
             }
-
         </script>
     </body>
 </html>
