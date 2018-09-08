@@ -2,6 +2,10 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
+            body {
+                color: rgba(0, 0, 0, 0.8);
+            }
+
             .style_div {
                 margin: 5px;
                 width: 150px;
@@ -15,23 +19,58 @@
                 border-bottom: 1px black solid;
                 font-size: 18pt;
                 width: 140px;
+                color: inherit;
             }
+
+            .material-icons {
+                font-family: 'Material Icons';
+                font-weight: normal;
+                font-style: normal;
+                font-size: 24px;  /* Preferred icon size */
+                display: inline-block;
+                line-height: 1;
+                text-transform: none;
+                letter-spacing: normal;
+                word-wrap: normal;
+                white-space: nowrap;
+                direction: ltr;
+
+                /* Support for all WebKit browsers. */
+                -webkit-font-smoothing: antialiased;
+                /* Support for Safari and Chrome. */
+                text-rendering: optimizeLegibility;
+
+                /* Support for Firefox. */
+                -moz-osx-font-smoothing: grayscale;
+
+                /* Support for IE. */
+                font-feature-settings: 'liga';
+            }
+
+            .material-icons.md-18 { font-size: 18px; }
+            .material-icons.md-24 { font-size: 24px; }
+            .material-icons.md-36 { font-size: 36px; }
+            .material-icons.md-48 { font-size: 48px; }
+
         </style>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        rel="stylesheet">
+        
     </head>
-    <body style="background-color: lightgray">
+    <body style="background-color: #8fb4e0">
         <div style="display: flex; flex-direction: column; align-items: center;">
             <div class="style_div"><span>Laps</span> <input id="laps" tpye="number" value="3"></div>
             <div class="style_div"><span>Exercises </span> <input id="exercises" type="number" value="3"></div>
             <div class="style_div"><span>Active (s)</span> <input id="activeTime" type="number" value = "30" ></div>
             <div class="style_div"><span>Pause (s)</span> <input id="pauseTime" type="number" value = "15"></div>
             <div class="style_div"><span>Ext. pause (s)</span> <input id="extendedPauseTime" type="number" value = "60"></div>
-            <div class="style_div" style="flex-grow: 1;"><span>Volume</span><input type="range" min="0" max="40" value="10"></div>
+            <div class="style_div"><span>Volume</span><input id="volume" type="number" onchange="setVolume()" min="0" max="40" value="10"></div>
         </div>
 
 
         <div class="style_div">
-                <button onclick="go()">Start</button> <button onclick="pause()">Pause</button>
-            </div>
+               <i class="material-icons md-48" onmousedown="go()">play_circle_filled</i><i class="material-icons md-48" onmousedown="pause()">pause_circle_filled</i>
+        </div>
         
         
                 
@@ -39,7 +78,23 @@
 
         <script>
             var orderList = [];
-            
+
+            var volume = 10;
+
+            function setVolume() {
+                volume = document.getElementById('volume').value;
+
+                if (volume < 0) {
+                    volume = 0;
+                } else if (volume > 80) {
+                    volume = 80;
+                }
+
+                document.getElementById('volume').value = volume;
+
+                beep();
+            }
+
             function pause() {
                 orderList[0].pause();
             }
@@ -199,11 +254,11 @@
             }
 
             function beep() {
-                k(10, 440, 150);
+                k(volume, 440, 150);
             }
 
             function beepLong() {
-                k(10, 880, 300);
+                k(volume, 880, 300);
             }
 
             
