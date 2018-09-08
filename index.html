@@ -10,7 +10,8 @@
         <style>
             body {
                 color: rgba(0, 0, 0, 0.8);
-                background-color: #8fb4e0
+                background-color: #8fb4e0;
+                overflow: hidden;
             }
 
 
@@ -85,7 +86,7 @@
     <body id="body"> 
 
         <div style="position: fixed; bottom: 10px;  right: 10px;"> 
-                <i id="startButton" class="material-icons md-96 pointer" onmousedown="go()">play_circle_filled</i>
+                <i id="startButton" class="material-icons md-96 pointer" onmousedown="initiate()">play_circle_filled</i>
         </div>
 
 
@@ -112,6 +113,18 @@
             var orderList = [];
 
             var volume = 10;
+
+            function initiate() {
+
+                window.addEventListener("done", () =>  {
+                    orderList.splice(0, 1);
+                    if (orderList.length > 0) {
+                        orderList[0].start();
+                    }
+                });
+
+                go();
+            }
 
             function restore() {
                 if (orderList[0].running) {
@@ -159,13 +172,6 @@
 
             function go() {
                 buildOrderList();
-
-                window.addEventListener("done", () =>  {
-                    orderList.splice(0, 1);
-                    if (orderList.length > 0) {
-                        orderList[0].start();
-                    }
-                });
                 
                 orderList[0].start();
                 
@@ -219,8 +225,9 @@
                 }
 
                 timeout() {
-                    setTimeout(() => {
+                    this.currentTimeout = setTimeout(() => {
                         if (this.running) {
+                            console.log("Timer running");
                             this.duration -= this.timeoutLength;
                             if (this.duration <= 0)
                             {
@@ -231,6 +238,8 @@
                                 this.onTimeout();
                                 this.timeout();  
                             }
+                        } else {
+                            console.log("not running");
                         }
                     }, this.timeoutLength);
                 }
@@ -250,6 +259,7 @@
                 pause() {
                     if (this.running) {
                         console.log("timer paused");
+                        clearTimeout(this.currentTimeout);
                         this.running = false;
                     } else {
                         console.log("timer started again");
@@ -265,7 +275,6 @@
 
             class Active extends Timer {
                 onTimeout() {
-                    
                     document.getElementById('statusText').innerHTML = "WORK IT";
                     document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
                     if (this.duration <= 3000) {
@@ -283,6 +292,7 @@
                     document.getElementsByTagName('meta')[1].content = '#e08f8f';
                 }
             }
+
 
             class Pause extends Timer {
                 onTimeout() {
@@ -304,6 +314,7 @@
                 }
             }
 
+
             class Prepare extends Timer {
                 onTimeout() {
                     document.getElementById('statusText').innerHTML = "PREPARE";
@@ -317,6 +328,7 @@
                     beepLong();
                 }
             }
+
 
             function secondsToPresentableString(inputSeconds) {
                 var minutes = Math.floor(inputSeconds/60);
