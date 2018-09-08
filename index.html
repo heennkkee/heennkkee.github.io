@@ -86,6 +86,11 @@
                 <i id="startButton" class="material-icons md-96 pointer" onmousedown="go()">play_circle_filled</i>
         </div>
 
+
+        <div style="position: fixed; bottom: 10px;  left: 10px; display:none;" id="restoreButton"> 
+                <i class="material-icons md-96 pointer" onmousedown="restore()">replay</i>
+        </div>
+
         <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; display: none; max-height: 100%" id="timerDiv">
                 <p id="statusText">WORK IT!</p>
                 <p id="timeLeft">01:15</p>
@@ -97,7 +102,7 @@
             <div class="style_div"><span>Active (s)</span> <input id="activeTime" type="number" value = "30" ></div>
             <div class="style_div"><span>Pause (s)</span> <input id="pauseTime" type="number" value = "15"></div>
             <div class="style_div"><span>Ext. pause (s)</span> <input id="extendedPauseTime" type="number" value = "60"></div>
-            <div class="style_div"><span>Volume</span><input id="volume" type="number" onchange="setVolume()" min="0" max="40" value="10"></div>
+            <div class="style_div"><span>Volume</span><input id="volume" type="number" onchange="setVolume()" value="10"></div>
         </div>    
 
 
@@ -105,6 +110,24 @@
             var orderList = [];
 
             var volume = 10;
+
+            function restore() {
+                if (orderList[0].running) {
+                    orderList[0].pause();
+                }
+
+                document.getElementById('body').style.backgroundColor = '#8fb4e0';
+                document.getElementsByTagName('meta')[1].content = '#8fb4e0';
+
+                orderList = [];
+
+                document.getElementById('startButton').innerHTML = "play_circle_filled";
+                document.getElementById('startButton').onmousedown = go;
+                document.getElementById('timerDiv').style.display = 'none';
+                document.getElementById('timerDiv').style.maxHeight = '100%';
+
+                document.getElementById('restoreButton').style.display = 'none';
+            }
 
             function setVolume() {
                 volume = document.getElementById('volume').value;
@@ -144,6 +167,8 @@
                 
                 orderList[0].start();
                 
+                document.getElementById('restoreButton').style.display = '';
+
                 document.getElementById('timerDiv').style.display = 'flex';
                 document.getElementById('startButton').innerHTML = "pause_circle_filled";
                 document.getElementById('startButton').onmousedown = pause;
