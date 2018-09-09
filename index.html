@@ -5,6 +5,8 @@
 
         <meta name="mobile-web-app-capable" content="yes">
 
+        <link rel="icon" href="images/timer-96-black.png" type="image/x-icon"/>
+        
         <link rel="manifest" href="manifest.json">
 
         <style>
@@ -64,6 +66,7 @@
 
             .pointer {
                 cursor: pointer;
+                user-select: none;
             }
 
             #timerDiv p {
@@ -73,44 +76,112 @@
             }
 
             #timerDiv {
-                transition: max-height 0.2s ease-out;
+                transition: display 0.2s ease-out;
             }
 
             #body {
                 transition: background-color 0.2s ease-out;
             }
 
+            #statusTextLower {
+                font-size: 18pt !important;
+            }
+
+
+        .flipper {
+            transition: 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        #settingsDiv {
+            z-index: 1;
+        }
+
+
+        #settingsDiv, #timerDiv {
+            position: absolute;
+            top: 0;
+            left: 0;
+            backface-visibility:hidden;
+            -webkit-backface-visibility:hidden;
+        }
+
+        #timerDiv {
+            transform: rotateX(-180deg);
+            animation: toFront 0.3s linear normal forwards;
+        }
+
+        #flip-container {
+            position: relative;
+        }
+
+        .vertical.flip-container.flipped #timerDiv {
+            animation-delay: 0.3s;
+            animation: toBack 0.3s linear normal  forwards;
+        }
+
+        #flip-container {
+            position: relative;
+        }
+
+        @keyframes toBack {  
+            0% {z-index:0;}
+            100% {z-index:1;}
+        }
+        @keyframes toFront {
+            0% {z-index:1;}
+            100% {z-index:0;}
+        }
+
+        #flip-container .flipper {
+            height: 100%;
+            width: 100%;
+            transform-origin: 100% 50%; /* half of height */
+        }
+
+        #flip-container.flipped .flipper {
+            transform: rotateX(-180deg);
+        }
+
         </style>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     </head>
     <body id="body"> 
 
-        <div style="position: fixed; bottom: 10px;  right: 10px;"> 
+        <div style="position: fixed; bottom: 10px;  right: 10px; z-index: 2; "> 
                 <i id="startButton" class="material-icons md-96 pointer" onmousedown="initiate()">play_circle_filled</i>
         </div>
 
 
-        <div style="position: fixed; bottom: 10px;  left: 10px; display:none;" id="restoreButton"> 
+        <div style="position: fixed; bottom: 10px;  left: 10px; z-index: 2; display:none;" id="restoreButton"> 
                 <i class="material-icons md-96 pointer" onmousedown="restore()">replay</i>
         </div>
 
-        <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; display: none; max-height: 100%" id="timerDiv">
-                <p id="statusText">WORK IT!</p>
-                <p id="timeLeft">01:15</p>
+        <div id ="flip-container" class="vertical">
+            <div class="flipper">
+                <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; width: 100%;" id="settingsDiv">
+                    <div class="style_div"><span>Laps</span> <input id="laps" tpye="number" value="3"></div>
+                    <div class="style_div"><span>Exercises </span> <input id="exercises" type="number" value="3"></div>
+                    <div class="style_div"><span>Active (s)</span> <input id="activeTime" type="number" value = "30" ></div>
+                    <div class="style_div"><span>Pause (s)</span> <input id="pauseTime" type="number" value = "15"></div>
+                    <div class="style_div"><span>Ext. pause (s)</span> <input id="extendedPauseTime" type="number" value = "60"></div>
+                    <div class="style_div"><span>Volume</span><input id="volume" type="number" onchange="setVolume()" value="10"></div>
+                </div>    
+    
+                <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; width: 100%;" id="timerDiv">
+                    <p id="statusText">WORK IT!</p>
+                    <p id="timeLeft">01:15</p>
+                    <p id="statusTextLower"></p>
+                </div>
             </div>
-
-        <div style="display: flex; flex-direction: column; align-items: center; height: 80%; justify-content: center;" id="settingsDiv">
-            <div class="style_div"><span>Laps</span> <input id="laps" tpye="number" value="3"></div>
-            <div class="style_div"><span>Exercises </span> <input id="exercises" type="number" value="3"></div>
-            <div class="style_div"><span>Active (s)</span> <input id="activeTime" type="number" value = "30" ></div>
-            <div class="style_div"><span>Pause (s)</span> <input id="pauseTime" type="number" value = "15"></div>
-            <div class="style_div"><span>Ext. pause (s)</span> <input id="extendedPauseTime" type="number" value = "60"></div>
-            <div class="style_div"><span>Volume</span><input id="volume" type="number" onchange="setVolume()" value="10"></div>
-        </div>    
-
+        </div>
+        
 
         <script src="NoSleep.min.js"></script>
+        <script src="momentum.js"></script>
         <script>
+
             var orderList = [];
             var volume = 10;
 
@@ -118,20 +189,22 @@
            
 
             function initiate() {
-
+                
                 window.addEventListener("done", () =>  {
                     orderList.splice(0, 1);
                     if (orderList.length > 0) {
-                        orderList[0].start();
+                        orderList[0].obj.start();
+                        document.getElementById('statusTextLower').innerHTML = orderList[0].text;
                     }
                 });
 
+                document.getElementById('statusTextLower').innerHTML = '';
                 go();
             }
 
             function restore() {
-                if (orderList[0].running) {
-                    orderList[0].pause();
+                if (orderList[0].obj.running) {
+                    orderList[0].obj.pause();
                 }
 
                 document.getElementById('body').style.backgroundColor = '#8fb4e0';
@@ -142,7 +215,7 @@
                 document.getElementById('startButton').innerHTML = "play_circle_filled";
                 document.getElementById('startButton').onmousedown = go;
                 document.getElementById('timerDiv').style.display = 'none';
-                document.getElementById('timerDiv').style.maxHeight = '100%';
+
 
                 document.getElementById('restoreButton').style.display = 'none';
             }
@@ -162,15 +235,15 @@
             }
 
             function pause() {
-                orderList[0].pause();
-
-                if (orderList[0].running) {
+                orderList[0].obj.pause();
+                
+                if (orderList[0].obj.running) {
                     document.getElementById('startButton').innerHTML = "pause_circle_filled";
-                    document.getElementById('timerDiv').style.maxHeight = '100%';
+                    document.getElementById('flip-container').classList.toggle('flipped');
                     noSleep.enable();
                 } else {
                     document.getElementById('startButton').innerHTML = "play_circle_filled";
-                    document.getElementById('timerDiv').style.maxHeight = '20%';
+                    document.getElementById('flip-container').classList.toggle('flipped');
                     noSleep.disable();
                 }
             }
@@ -179,12 +252,13 @@
                 buildOrderList();
                 
                 noSleep.enable();
-
-                orderList[0].start();
+                
+                orderList[0].obj.start();
                 
                 document.getElementById('restoreButton').style.display = '';
 
-                document.getElementById('timerDiv').style.display = 'flex';
+                document.getElementById('flip-container').classList.toggle('flipped');
+
                 document.getElementById('startButton').innerHTML = "pause_circle_filled";
                 document.getElementById('startButton').onmousedown = pause;
             }
@@ -196,22 +270,21 @@
                 var pauseTime = document.getElementById('pauseTime').value;
                 var extendedPauseTime = document.getElementById('extendedPauseTime').value;
                 
-                orderList.push(new Prepare(5));
+                orderList.push({text:'', obj: new Prepare(5)});
                 
                 for (x = 0; x < laps; x += 1) {
                     for (y = 0; y < exercises; y += 1) {
-                        orderList.push(new Active(activeTime));
+                        orderList.push({text: 'Lap ' + (x + 1) + '/' + laps + ' - Exercise ' + (y + 1) + '/' + exercises, obj: new Active(activeTime)});
 
                         if (y < exercises - 1) {
-                            orderList.push(new Pause(pauseTime));
+                            orderList.push({text: 'Lap ' + (x + 1) + '/' + laps + ' - Exercise ' + (y + 1) + '/' + (exercises - 1), obj: new Pause(pauseTime)});
                         }
 
                     }
                     if (x <  laps - 1) {
-                        orderList.push(new Pause(extendedPauseTime));
+                        orderList.push({text: 'Lap break ' + (x + 1) + '/' + laps, obj: new Pause(extendedPauseTime)});
                     }
                 }
-
             }
 
 
@@ -221,7 +294,7 @@
                     this.duration = duration * 1000;
 
                     this.running = false;
-                    this.timeoutLength = 1000;
+                    this.timeoutLength = 500;
                 }
 
                 start() {
@@ -234,7 +307,6 @@
                 timeout() {
                     this.currentTimeout = setTimeout(() => {
                         if (this.running) {
-                            console.log("Timer running");
                             this.duration -= this.timeoutLength;
                             if (this.duration <= 0)
                             {
@@ -246,7 +318,7 @@
                                 this.timeout();  
                             }
                         } else {
-                            console.log("not running");
+                            console.log("Timer not running anymore.");
                         }
                     }, this.timeoutLength);
                 }
@@ -265,11 +337,9 @@
 
                 pause() {
                     if (this.running) {
-                        console.log("timer paused");
                         clearTimeout(this.currentTimeout);
                         this.running = false;
                     } else {
-                        console.log("timer started again");
                         this.running = true;
                         this.timeout();
                     }
@@ -284,28 +354,7 @@
                 onTimeout() {
                     document.getElementById('statusText').innerHTML = "WORK IT";
                     document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                    if (this.duration <= 3000) {
-                        beep();
-                    }
-                }
-
-                onDone() {
-                    document.getElementById('timeLeft').innerHTML = "Finished";
-                    beepLong();
-                }
-
-                onStart() {
-                    document.getElementById('body').style.backgroundColor = '#e08f8f';
-                    document.getElementsByTagName('meta')[1].content = '#e08f8f';
-                }
-            }
-
-
-            class Pause extends Timer {
-                onTimeout() {
-                    document.getElementById('statusText').innerHTML = "PAUSE";
-                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                    if (this.duration <= 3000) {
+                    if (this.duration <= 3000 && this.duration % 1000 == 0) {
                         beep();
                     }
                 }
@@ -322,11 +371,32 @@
             }
 
 
+            class Pause extends Timer {
+                onTimeout() {
+                    document.getElementById('statusText').innerHTML = "PAUSE";
+                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
+                    if (this.duration <= 3000 && this.duration % 1000 == 0) {
+                        beep();
+                    }
+                }
+
+                onDone() {
+                    document.getElementById('timeLeft').innerHTML = "Finished";
+                    beepLong();
+                }
+
+                onStart() {
+                    document.getElementById('body').style.backgroundColor = '#e08f8f';
+                    document.getElementsByTagName('meta')[1].content = '#e08f8f';
+                }
+            }
+
+
             class Prepare extends Timer {
                 onTimeout() {
                     document.getElementById('statusText').innerHTML = "PREPARE";
                     document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                    if (this.duration <= 3000) {
+                    if (this.duration <= 3000 && this.duration % 1000 == 0) {
                         beep();
                     }
                 }
@@ -338,8 +408,10 @@
 
 
             function secondsToPresentableString(inputSeconds) {
+                inputSeconds = Math.ceil(inputSeconds);
                 var minutes = Math.floor(inputSeconds/60);
                 var seconds = inputSeconds - minutes * 60;
+
                 return zeroPrefixIfSingleDigit(minutes) + ':' + zeroPrefixIfSingleDigit(seconds);
             }
 
@@ -363,21 +435,23 @@
                 k(volume, 880, 300);
             }
 
-            
-            audio = new AudioContext();
             // gain, frequency, duration
-            function k(w, x, y){
-                console.log(w + x + y);
-                v = audio.createOscillator();
-                u = audio.createGain();
-                v.connect(u);
-                v.frequency.value = x;
-                v.type = "square";
-                u.connect(audio.destination);
-                u.gain.value = w * 0.01;
-                v.start(audio.currentTime);
-                v.stop(audio.currentTime + y * 0.001);
+
+            var audio = new AudioContext();
+            function k(volume, frequency, duration){
+                
+                var oscillator = audio.createOscillator();
+                var gain = audio.createGain();
+
+                oscillator.connect(gain);
+                oscillator.frequency.value = frequency;
+                oscillator.type = "square";
+                gain.connect(audio.destination);
+                gain.gain.value = volume * 0.01;
+                oscillator.start(audio.currentTime);
+                oscillator.stop(audio.currentTime + duration * 0.001);
             }
+
         </script>
     </body>
 </html>
