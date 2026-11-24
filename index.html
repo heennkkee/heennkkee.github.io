@@ -166,10 +166,10 @@ let defaultSettings = {
 
 function onload() {
 
-	let ls = window.localStorage.getItem("settings");
-	
+	let ls = {};
+
 	try {
-		ls = JSON.parse(ls);
+		ls = JSON.parse(window.localStorage.getItem("settings")) ?? {};
 	} catch (ex) { console.log(ex); }
 
 	let settings = {
@@ -190,15 +190,20 @@ document.getElementById('extendedPauseTime').value = settings.lapPause;
 
 function saveChanges() {
 let saveSettings = {
-	laps: document.getElementById('laps').value ?? defaultSettings.laps,
-	exercises: document.getElementById('exercises').value ?? defaultSettings.exercises,
-	exerciseTime: document.getElementById('activeTime').value ?? defaultSettings.exerciseTime,
-	exercisePause: document.getElementById('pauseTime').value ?? defaultSettings.pauseTime,
-	lapPause: document.getElementById('extendedPauseTime').value ?? defaultSettings.lapTime	 
+	laps: readNumber('laps', defaultSettings.laps),
+	exercises: readNumber('exercises', defaultSettings.exercises),
+	exerciseTime: readNumber('activeTime', defaultSettings.exerciseTime),
+	exercisePause: readNumber('pauseTime', defaultSettings.exercisePause),
+	lapPause: readNumber('extendedPauseTime', defaultSettings.lapPause)
 }
 
 window.localStorage.setItem("settings", JSON.stringify(saveSettings));
 
+}
+
+function readNumber(id, fallback) {
+	const value = Number(document.getElementById(id).value);
+	return document.getElementById(id).value === '' || isNaN(value) ? fallback : value;
 }
 </script>
     </head>
@@ -267,9 +272,11 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
             }
 
             function restore() {
-                if (orderList[0].obj.running) {
+                if (orderList.length > 0 && orderList[0].obj.running) {
                     orderList[0].obj.pause();
                 }
+
+                noSleep.disable();
 
                 document.getElementById('body').style.backgroundColor = '#8fb4e0';
                 document.getElementsByTagName('meta')[1].content = '#8fb4e0';
@@ -281,6 +288,7 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
                 document.getElementById('flip-container').classList.remove('flipped');
 
                 document.getElementById('timerRunningIndicator').innerHTML = '';
+                document.getElementById('timerRunningIndicator').style.visibility = 'hidden';
 
                 document.getElementById('restoreButton').style.display = 'none';
             }
@@ -316,8 +324,10 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
             }
 
             function go() {
+                orderList = [];
                 buildOrderList();
-                
+
+                audio.resume();
                 noSleep.enable();
                 
                 orderList[0].obj.start();
@@ -333,20 +343,20 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
             }
 
             function buildOrderList() {
-                var laps = document.getElementById('laps').value;
-                var exercises = document.getElementById('exercises').value;
-                var activeTime = document.getElementById('activeTime').value;
-                var pauseTime = document.getElementById('pauseTime').value;
-                var extendedPauseTime = document.getElementById('extendedPauseTime').value;
-                
+                var laps = readNumber('laps', defaultSettings.laps);
+                var exercises = readNumber('exercises', defaultSettings.exercises);
+                var activeTime = readNumber('activeTime', defaultSettings.exerciseTime);
+                var pauseTime = readNumber('pauseTime', defaultSettings.exercisePause);
+                var extendedPauseTime = readNumber('extendedPauseTime', defaultSettings.lapPause);
+
                 orderList.push({text:'', obj: new Prepare(5)});
-                
-                for (x = 0; x < laps; x += 1) {
-                    for (y = 0; y < exercises; y += 1) {
+
+                for (let x = 0; x < laps; x += 1) {
+                    for (let y = 0; y < exercises; y += 1) {
                         orderList.push({text: 'Lap ' + (x + 1) + '/' + laps + ' - Exercise ' + (y + 1) + '/' + exercises, obj: new Active(activeTime)});
 
                         if (y < exercises - 1) {
-                            orderList.push({text: 'Lap ' + (x + 1) + '/' + laps + ' - Exercise ' + (y + 1) + '/' + (exercises - 1), obj: new Pause(pauseTime)});
+                            orderList.push({text: 'Lap ' + (x + 1) + '/' + laps + ' - Next: exercise ' + (y + 2) + '/' + exercises, obj: new Pause(pauseTime)});
                         }
 
                     }
@@ -360,56 +370,67 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
             class Timer {
 
                 constructor (duration) {
+                    // Remaining time in ms. Recomputed from a wall-clock end time each tick so delays don't accumulate.
                     this.duration = duration * 1000;
 
                     this.running = false;
-                    this.timeoutLength = 500;
+                    this.timeoutLength = 100;
+                    this.lastSecond = null;
                 }
 
                 start() {
                     this.running = true;
+                    this.endTime = performance.now() + this.duration;
                     this.onStart();
-                    this.onTimeout();
+                    this.tick();
                     this.timeout();
                 }
 
                 timeout() {
                     this.currentTimeout = setTimeout(() => {
-                        if (this.running) {
-                            this.duration -= this.timeoutLength;
-                            if (this.duration <= 0)
-                            {
-                                this.onDone();
-                                this.running = false;
-                                this.onEnd();
-                            } else {
-                                this.onTimeout();
-                                this.timeout();  
-                            }
+                        if (!this.running) {
+                            return;
+                        }
+
+                        this.duration = Math.max(0, this.endTime - performance.now());
+                        if (this.duration <= 0) {
+                            this.onDone();
+                            this.running = false;
+                            this.onEnd();
                         } else {
-                            console.log("Timer not running anymore.");
+                            this.tick();
+                            this.timeout();
                         }
                     }, this.timeoutLength);
                 }
 
-                onStart() {
-                    console.log("on start");
+                tick() {
+                    this.onTimeout();
+
+                    // Beep once as each of the last 3 seconds begins.
+                    const second = Math.ceil(this.duration / 1000);
+                    if (second !== this.lastSecond) {
+                        this.lastSecond = second;
+                        if (second <= 3) {
+                            beep();
+                        }
+                    }
                 }
 
-                onTimeout() {
-                    console.log("in timeout, duration left of timer: " + this.duration);
-                }
+                onStart() {}
 
-                onDone() {
-                    console.log("done");
-                }
+                onTimeout() {}
+
+                onDone() {}
 
                 pause() {
                     if (this.running) {
                         clearTimeout(this.currentTimeout);
+                        this.duration = Math.max(0, this.endTime - performance.now());
                         this.running = false;
                     } else {
                         this.running = true;
+                        this.endTime = performance.now() + this.duration;
                         this.timeout();
                     }
                 }
@@ -423,9 +444,6 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
                 onTimeout() {
                     document.getElementById('statusText').innerHTML = "WORK IT";
                     document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                    if (this.duration <= 3000 && this.duration % 1000 == 0) {
-                        beep();
-                    }
                 }
 
                 onDone() {
@@ -444,9 +462,6 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
                 onTimeout() {
                     document.getElementById('statusText').innerHTML = "PAUSE";
                     document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                    if (this.duration <= 3000 && this.duration % 1000 == 0) {
-                        beep();
-                    }
                 }
 
                 onDone() {
@@ -465,9 +480,6 @@ window.localStorage.setItem("settings", JSON.stringify(saveSettings));
                 onTimeout() {
                     document.getElementById('statusText').innerHTML = "PREPARE";
                     document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                    if (this.duration <= 3000 && this.duration % 1000 == 0) {
-                        beep();
-                    }
                 }
 
                 onDone() {
