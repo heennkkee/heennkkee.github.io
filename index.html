@@ -1,538 +1,920 @@
-<html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="theme-color" content="#8fb4e0" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#8fb4e0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Intervals</title>
 
-        <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" href="images/timer-96-black.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-        <link rel="icon" href="images/timer-96-black.png" type="image/x-icon"/>
-        
-        <link rel="manifest" href="manifest.json">
-
-        <style>
-            body {
-                color: rgba(0, 0, 0, 0.8);
-                background-color: #8fb4e0;
-                overflow: hidden;
-            }
-
-
-            .style_div {
-                margin: 5px;
-                width: 150px;
-                font-size: 16pt;
-            }    
-
-            .style_div input {
-                background-color: inherit;
-                border: none;
-                outline: none;
-                border-bottom: 1px black solid;
-                font-size: 25pt;
-                width: 140px;
-                color: inherit;
-            }
-
-            .material-icons {
-                font-family: 'Material Icons';
-                font-weight: normal;
-                font-style: normal;
-                font-size: 24px;  /* Preferred icon size */
-                display: inline-block;
-                line-height: 1;
-                text-transform: none;
-                letter-spacing: normal;
-                word-wrap: normal;
-                white-space: nowrap;
-                direction: ltr;
-
-                /* Support for all WebKit browsers. */
-                -webkit-font-smoothing: antialiased;
-                /* Support for Safari and Chrome. */
-                text-rendering: optimizeLegibility;
-
-                /* Support for Firefox. */
-                -moz-osx-font-smoothing: grayscale;
-
-                /* Support for IE. */
-                font-feature-settings: 'liga';
-            }
-
-            .material-icons.md-18 { font-size: 18px; }
-            .material-icons.md-24 { font-size: 24px; }
-            .material-icons.md-36 { font-size: 36px; }
-            .material-icons.md-48 { font-size: 48px; }
-            .material-icons.md-96 { font-size: 96px; }
-
-            .pointer {
-                cursor: pointer;
-                user-select: none;
-            }
-
-            #timerDiv p {
-                margin: 5px;
-                font-size: 40pt;
-                font-weight: 800;
-            }
-
-            #timerDiv {
-                transition: display 0.2s ease-out;
-            }
-
-            #body {
-                transition: background-color 0.2s ease-out;
-            }
-
-            #statusTextLower {
-                font-size: 18pt !important;
-            }
-
-
-        .flipper {
-            transition: 0.6s;
-            transform-style: preserve-3d;
-            position: relative;
+    <style>
+        :root {
+            --bg: #8fb4e0;
+            --ink: rgba(0, 0, 0, 0.82);
+            --muted: rgba(0, 0, 0, 0.55);
+            --card: rgba(255, 255, 255, 0.3);
+            --card-strong: rgba(255, 255, 255, 0.72);
+            --line: rgba(0, 0, 0, 0.15);
+            --solid: rgba(0, 0, 0, 0.82);
         }
 
-        #settingsDiv {
-            z-index: 1;
+        * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        html, body { margin: 0; height: 100%; }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background-color: var(--bg);
+            transition: background-color 0.3s ease-out;
+            -webkit-tap-highlight-color: transparent;
         }
 
-
-        #settingsDiv, #timerDiv {
-            position: absolute;
-            top: 0;
-            left: 0;
-            backface-visibility:hidden;
-            -webkit-backface-visibility:hidden;
-        }
-
-        #timerDiv {
-            transform: rotateX(-180deg);
-            animation: toFront 0.3s linear normal forwards;
-        }
-
-        #flip-container {
-            position: relative;
-        }
-
-        .vertical.flip-container.flipped #timerDiv {
-            animation-delay: 0.3s;
-            animation: toBack 0.3s linear normal  forwards;
-        }
-
-        #flip-container {
-            position: relative;
-        }
-
-        @keyframes toBack {  
-            0% {z-index:0;}
-            100% {z-index:1;}
-        }
-        @keyframes toFront {
-            0% {z-index:1;}
-            100% {z-index:0;}
-        }
-
-        #flip-container .flipper {
-            height: 100%;
-            width: 100%;
-            transform-origin: 100% 50%; /* half of height */
-        }
-
-        #flip-container.flipped .flipper {
-            transform: rotateX(-180deg);
-        }
-
-        #timerRunningIndicator {
-            font-size: 30pt;
-            font-weight: 800;
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
             display: inline-block;
-            visibility: hidden;
-            margin: 0 auto;
+            text-transform: none;
+            letter-spacing: normal;
+            white-space: nowrap;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+            font-feature-settings: 'liga';
         }
 
-        </style>
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<script>
+        button {
+            font: inherit;
+            color: inherit;
+            background: none;
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+            user-select: none;
+        }
 
-let defaultSettings = {
-	laps: 3,
-	exercises: 3,
-	exerciseTime: 45,
-	exercisePause: 15,
-	lapPause: 60
-};
+        button:disabled { opacity: 0.3; cursor: default; }
 
-function onload() {
+        /* ---------- Setup screen ---------- */
 
-	let ls = {};
+        #setup {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: calc(20px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom));
+        }
 
-	try {
-		ls = JSON.parse(window.localStorage.getItem("settings")) ?? {};
-	} catch (ex) { console.log(ex); }
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin: 8px 0 20px;
+        }
 
-	let settings = {
-    laps: ls.laps ?? defaultSettings.laps,
-    exercises: ls.exercises ?? defaultSettings.exercises,
-    exerciseTime: ls.exerciseTime ?? defaultSettings.exerciseTime,
-    exercisePause: ls.exercisePause ?? defaultSettings.exercisePause,
-    lapPause: ls.lapPause ?? defaultSettings.lapPause
-};
+        h2 {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin: 0 0 4px;
+        }
 
-document.getElementById('laps').value = settings.laps;
-document.getElementById('exercises').value = settings.exercises;
-document.getElementById('activeTime').value = settings.exerciseTime;
-document.getElementById('pauseTime').value = settings.exercisePause;
-document.getElementById('extendedPauseTime').value = settings.lapPause;
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
 
-}
+        #exerciseList {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
 
-function saveChanges() {
-let saveSettings = {
-	laps: readNumber('laps', defaultSettings.laps),
-	exercises: readNumber('exercises', defaultSettings.exercises),
-	exerciseTime: readNumber('activeTime', defaultSettings.exerciseTime),
-	exercisePause: readNumber('pauseTime', defaultSettings.exercisePause),
-	lapPause: readNumber('extendedPauseTime', defaultSettings.lapPause)
-}
+        .exercise-row {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            border-bottom: 1px solid var(--line);
+        }
 
-window.localStorage.setItem("settings", JSON.stringify(saveSettings));
+        .exercise-row .num {
+            width: 24px;
+            flex: none;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
 
-}
+        .exercise-row input,
+        .add-row input {
+            flex: 1;
+            min-width: 0;
+            font: inherit;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 10px 4px;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            outline: none;
+        }
 
-function readNumber(id, fallback) {
-	const value = Number(document.getElementById(id).value);
-	return document.getElementById(id).value === '' || isNaN(value) ? fallback : value;
-}
-</script>
-    </head>
-    <body id="body" onload="onload()"> 
-        <div id="header" style="position: fixed; top: 0; z-index: 2; width: 100%; height: 96px; display: flex; align-items: center;">
-            <div id="timerRunningIndicator"></div>
+        .exercise-row input:focus,
+        .add-row input:focus {
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 6px;
+        }
+
+        .add-row input::placeholder { color: var(--muted); font-weight: 400; }
+
+        .add-row {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-top: 6px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            flex: none;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+        }
+
+        .icon-btn:not(:disabled):hover { background: rgba(0, 0, 0, 0.07); }
+
+        .empty {
+            color: var(--muted);
+            padding: 10px 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px 16px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .field input[type=number] {
+            width: 100%;
+            font: inherit;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--ink);
+            background: transparent;
+            border: 0;
+            border-bottom: 2px solid var(--line);
+            padding: 2px 0;
+            outline: none;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .field input[type=number]:focus { border-bottom-color: var(--ink); }
+
+        .wide { grid-column: 1 / -1; }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--solid);
+        }
+
+        #summary {
+            text-align: center;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        #startBtn {
+            position: fixed;
+            left: 50%;
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 30px 14px 20px;
+            border-radius: 999px;
+            background: var(--solid);
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #startBtn .material-icons { font-size: 32px; }
+
+        /* ---------- Workout screen ---------- */
+
+        #workout {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: calc(16px + env(safe-area-inset-top)) 20px 8px;
+            font-size: 18px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #viewport {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent);
+            mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent);
+        }
+
+        #timeline {
+            list-style: none;
+            margin: 0 auto;
+            padding: 0 16px;
+            max-width: 560px;
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .item {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            column-gap: 12px;
+            margin: 8px 0;
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: var(--card);
+            opacity: 0.6;
+            transform: scale(0.9);
+            transition: opacity 0.4s, transform 0.4s, background-color 0.4s;
+        }
+
+        .item.past { opacity: 0.28; }
+
+        .item.current {
+            opacity: 1;
+            transform: scale(1);
+            background: var(--card-strong);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .item .meta {
+            grid-column: 1;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
+        }
+
+        .item .name {
+            grid-column: 1;
+            font-size: 26px;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+        .item .time {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            font-size: 34px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .item.rest, .item.lapbreak { padding-block: 10px; }
+        .item.rest .name, .item.lapbreak .name { font-size: 18px; font-weight: 700; }
+        .item.rest .time, .item.lapbreak .time { font-size: 24px; }
+
+        .item.done .time,
+        .item.done .bar { display: none; }
+
+        .item .bar {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 5px;
+            width: 0;
+            background: var(--solid);
+        }
+
+        .item:not(.current) .bar { display: none; }
+
+        #workout.paused .item.current .time { animation: blink 1s steps(2, start) infinite; }
+
+        @keyframes blink { to { visibility: hidden; } }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 18px;
+            padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+        }
+
+        .ctrl {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: var(--card);
+        }
+
+        .ctrl .material-icons { font-size: 30px; }
+
+        .ctrl.main {
+            width: 84px;
+            height: 84px;
+            background: var(--solid);
+            color: #fff;
+        }
+
+        .ctrl.main .material-icons { font-size: 52px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #timeline, .item { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <main id="setup">
+        <h1>Intervals</h1>
+
+        <section class="card">
+            <h2>Exercises</h2>
+            <ol id="exerciseList"></ol>
+            <form id="addForm" class="add-row">
+                <span class="material-icons" style="color: var(--muted); width: 24px;">add</span>
+                <input id="newExercise" placeholder="Add exercise…" autocomplete="off" enterkeyhint="done" aria-label="New exercise name">
+                <button type="submit" class="icon-btn" aria-label="Add exercise"><i class="material-icons">keyboard_return</i></button>
+            </form>
+        </section>
+
+        <section class="card grid">
+            <label class="field">Laps
+                <input id="laps" type="number" min="1" inputmode="numeric">
+            </label>
+            <label class="field">Work (s)
+                <input id="workTime" type="number" min="1" inputmode="numeric">
+            </label>
+            <label class="field">Between exercises (s)
+                <input id="exercisePause" type="number" min="0" inputmode="numeric">
+            </label>
+            <label class="field">Between laps (s)
+                <input id="lapPause" type="number" min="0" inputmode="numeric">
+            </label>
+            <label class="field wide">Volume
+                <input id="volume" type="range" min="0" max="80">
+            </label>
+        </section>
+
+        <p id="summary"></p>
+    </main>
+
+    <button id="startBtn"><i class="material-icons">play_arrow</i>Start</button>
+
+    <main id="workout" hidden>
+        <header class="topbar">
+            <span id="lapInfo"></span>
+            <span id="totalLeft"></span>
+        </header>
+
+        <div id="viewport">
+            <ol id="timeline"></ol>
         </div>
 
-        <div id="footer" style="position: fixed; bottom: 0; z-index: 2; width: 100%; height: 96px; display: flex; align-items: center;">
-            <div style="position: fixed; left: 10px; display:none;" id="restoreButton"> 
-                    <i class="material-icons md-96 pointer" onmousedown="restore()">replay</i>
-            </div>
+        <footer class="controls">
+            <button id="stopBtn" class="ctrl" aria-label="Stop workout"><i class="material-icons">close</i></button>
+            <button id="prevBtn" class="ctrl" aria-label="Previous"><i class="material-icons">skip_previous</i></button>
+            <button id="playBtn" class="ctrl main" aria-label="Pause"><i class="material-icons">pause</i></button>
+            <button id="nextBtn" class="ctrl" aria-label="Next"><i class="material-icons">skip_next</i></button>
+            <span style="width: 56px;"></span>
+        </footer>
+    </main>
 
-  
+    <script src="NoSleep.min.js"></script>
+    <script src="momentum.js"></script>
+    <script>
+        const PREPARE_SECONDS = 5;
+        const TICK_MS = 100;
 
-            <div style="position: fixed; right: 10px;"> 
-                    <i id="startButton" class="material-icons md-96 pointer" onmousedown="initiate()">play_circle_filled</i>
-            </div>
+        const DEFAULTS = {
+            exercises: ['Exercise 1', 'Exercise 2', 'Exercise 3'],
+            laps: 3,
+            workTime: 45,
+            exercisePause: 15,
+            lapPause: 60,
+            volume: 10
+        };
 
-        </div>
+        const COLORS = {
+            idle: '#8fb4e0',
+            prepare: '#e0c98f',
+            work: '#8fe094',
+            rest: '#e08f8f',
+            lapbreak: '#e08f8f',
+            done: '#8fb4e0'
+        };
 
-        <div id ="flip-container" class="vertical">
-            <div class="flipper">
-                <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; width: 100%;" id="settingsDiv">
-                    <div class="style_div"><span>Laps</span> <input id="laps" type="number" onChange="saveChanges()"></div>
-                    <div class="style_div"><span>Exercises </span> <input id="exercises" type="number" onChange="saveChanges()"></div>
-                    <div class="style_div"><span>Active (s)</span> <input id="activeTime" type="number" onChange="saveChanges()"></div>
-                    <div class="style_div"><span>Pause (s)</span> <input id="pauseTime" type="number" onChange="saveChanges()"></div>
-                    <div class="style_div"><span>Ext. pause (s)</span> <input id="extendedPauseTime" type="number" onChange="saveChanges()"></div>
-                    <div class="style_div"><span>Volume</span><input id="volume" type="number" onchange="setVolume()" value="10"></div>
-                </div>    
-    
-                <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; width: 100%;" id="timerDiv">
-                    <p id="statusText">WORK IT!</p>
-                    <p id="timeLeft">45</p>
-                    <p id="statusTextLower"></p>
-                </div>
-            </div>
-        </div>
-        
+        const $ = id => document.getElementById(id);
+        const noSleep = new NoSleep();
 
-        <script src="NoSleep.min.js"></script>
-        <script src="momentum.js"></script>
-        <script>
+        let settings = loadSettings();
 
-            var orderList = [];
-            var volume = 10;
+        // ---------- Settings ----------
 
-            var noSleep = new NoSleep();
-           
+        function loadSettings() {
+            let saved = {};
+            try {
+                saved = JSON.parse(localStorage.getItem('settings')) ?? {};
+            } catch (ex) { console.log(ex); }
 
-            function initiate() {
-                
-                window.addEventListener("done", () =>  {
-                    orderList.splice(0, 1);
-                    if (orderList.length > 0) {
-                        orderList[0].obj.start();
-                        document.getElementById('statusTextLower').innerHTML = orderList[0].text;
+            const num = (value, fallback, min) => {
+                const n = Number(value);
+                return value !== '' && value != null && Number.isFinite(n) && n >= min ? n : fallback;
+            };
+
+            let exercises = Array.isArray(saved.exercises)
+                ? saved.exercises.filter(name => typeof name === 'string' && name.trim())
+                : null;
+
+            // Migrate old format, which stored a count instead of names.
+            if (!exercises && Number(saved.exercises) > 0) {
+                exercises = Array.from({ length: Number(saved.exercises) }, (_, i) => 'Exercise ' + (i + 1));
+            }
+
+            return {
+                exercises: exercises?.length ? exercises : [...DEFAULTS.exercises],
+                laps: num(saved.laps, DEFAULTS.laps, 1),
+                workTime: num(saved.workTime ?? saved.exerciseTime, DEFAULTS.workTime, 1),
+                exercisePause: num(saved.exercisePause, DEFAULTS.exercisePause, 0),
+                lapPause: num(saved.lapPause, DEFAULTS.lapPause, 0),
+                volume: num(saved.volume, DEFAULTS.volume, 0)
+            };
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem('settings', JSON.stringify(settings));
+            } catch (ex) { console.log(ex); }
+            updateSummary();
+        }
+
+        function renderExercises() {
+            const list = $('exerciseList');
+            list.replaceChildren();
+
+            if (settings.exercises.length === 0) {
+                const empty = document.createElement('li');
+                empty.className = 'empty';
+                empty.textContent = 'No exercises yet. Add one below.';
+                list.append(empty);
+            }
+
+            settings.exercises.forEach((name, i) => {
+                const row = document.createElement('li');
+                row.className = 'exercise-row';
+
+                const num = document.createElement('span');
+                num.className = 'num';
+                num.textContent = i + 1;
+
+                const input = document.createElement('input');
+                input.value = name;
+                input.setAttribute('aria-label', 'Exercise ' + (i + 1) + ' name');
+                input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+                input.addEventListener('change', () => {
+                    const value = input.value.trim();
+                    if (value) {
+                        settings.exercises[i] = value;
+                        saveSettings();
                     } else {
-                        restore();
+                        input.value = settings.exercises[i];
                     }
                 });
 
-                document.getElementById('statusTextLower').innerHTML = '';
-                go();
-            }
+                const last = settings.exercises.length - 1;
+                row.append(
+                    num,
+                    input,
+                    iconButton('arrow_upward', 'Move up', i === 0, () => moveExercise(i, -1)),
+                    iconButton('arrow_downward', 'Move down', i === last, () => moveExercise(i, 1)),
+                    iconButton('close', 'Remove', false, () => {
+                        settings.exercises.splice(i, 1);
+                        saveSettings();
+                        renderExercises();
+                    })
+                );
+                list.append(row);
+            });
 
-            function restore() {
-                if (orderList.length > 0 && orderList[0].obj.running) {
-                    orderList[0].obj.pause();
+            $('startBtn').disabled = settings.exercises.length === 0;
+        }
+
+        function iconButton(icon, label, disabled, onClick) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'icon-btn';
+            button.setAttribute('aria-label', label);
+            button.disabled = disabled;
+            button.innerHTML = '<i class="material-icons">' + icon + '</i>';
+            button.addEventListener('click', onClick);
+            return button;
+        }
+
+        function moveExercise(i, delta) {
+            const list = settings.exercises;
+            [list[i], list[i + delta]] = [list[i + delta], list[i]];
+            saveSettings();
+            renderExercises();
+        }
+
+        function bindNumberInput(id, key, min) {
+            const input = $(id);
+            input.value = settings[key];
+            input.addEventListener('change', () => {
+                const n = Math.round(Number(input.value));
+                settings[key] = input.value !== '' && Number.isFinite(n) ? Math.max(min, n) : settings[key];
+                input.value = settings[key];
+                saveSettings();
+            });
+        }
+
+        function updateSummary() {
+            const n = settings.exercises.length;
+            if (n === 0) {
+                $('summary').textContent = '';
+                return;
+            }
+            const total = buildSegments(settings).reduce((sum, seg) => sum + seg.duration, 0);
+            $('summary').textContent =
+                n + (n === 1 ? ' exercise' : ' exercises') + ' × ' +
+                settings.laps + (settings.laps === 1 ? ' lap' : ' laps') + ' · ' +
+                formatTime(total * 1000) + ' total';
+        }
+
+        // ---------- Workout plan ----------
+
+        function buildSegments(s) {
+            const names = s.exercises;
+            const segments = [{
+                type: 'prepare',
+                name: 'Get ready',
+                meta: 'First up: ' + names[0],
+                duration: PREPARE_SECONDS
+            }];
+
+            for (let lap = 1; lap <= s.laps; lap++) {
+                names.forEach((name, i) => {
+                    segments.push({
+                        type: 'work',
+                        name: name,
+                        meta: 'Lap ' + lap + '/' + s.laps + ' · ' + (i + 1) + '/' + names.length,
+                        lap: lap,
+                        duration: s.workTime
+                    });
+
+                    if (i < names.length - 1 && s.exercisePause > 0) {
+                        segments.push({
+                            type: 'rest',
+                            name: 'Rest',
+                            meta: 'Next: ' + names[i + 1],
+                            lap: lap,
+                            duration: s.exercisePause
+                        });
+                    }
+                });
+
+                if (lap < s.laps && s.lapPause > 0) {
+                    segments.push({
+                        type: 'lapbreak',
+                        name: 'Lap break',
+                        meta: 'Next: lap ' + (lap + 1) + '/' + s.laps,
+                        lap: lap,
+                        duration: s.lapPause
+                    });
                 }
-
-                noSleep.disable();
-
-                document.getElementById('body').style.backgroundColor = '#8fb4e0';
-                document.getElementsByTagName('meta')[1].content = '#8fb4e0';
-
-                orderList = [];
-
-                document.getElementById('startButton').innerHTML = "play_circle_filled";
-                document.getElementById('startButton').onmousedown = go;
-                document.getElementById('flip-container').classList.remove('flipped');
-
-                document.getElementById('timerRunningIndicator').innerHTML = '';
-                document.getElementById('timerRunningIndicator').style.visibility = 'hidden';
-
-                document.getElementById('restoreButton').style.display = 'none';
             }
 
-            function setVolume() {
-                volume = document.getElementById('volume').value;
+            segments.push({
+                type: 'done',
+                name: 'Done!',
+                meta: s.laps + (s.laps === 1 ? ' lap' : ' laps') + ' · ' + names.length * s.laps + ' sets',
+                duration: 0
+            });
 
-                if (volume < 0) {
-                    volume = 0;
-                } else if (volume > 80) {
-                    volume = 80;
+            return segments;
+        }
+
+        // ---------- Workout engine ----------
+
+        // Remaining time is recomputed from a wall-clock end time each tick, so timer delays never accumulate.
+        const run = {
+            segments: [],
+            index: 0,
+            remaining: 0,
+            endTime: 0,
+            running: false,
+            timer: null,
+            lastSecond: null
+        };
+
+        function startWorkout() {
+            ensureAudio();
+            run.segments = buildSegments(settings);
+            renderTimeline();
+
+            $('setup').hidden = true;
+            $('startBtn').hidden = true;
+            $('workout').hidden = false;
+
+            goTo(0);
+            resume();
+        }
+
+        function stopWorkout() {
+            const finished = run.segments[run.index]?.type === 'done';
+            if (!finished && !confirm('Stop the workout?')) {
+                return;
+            }
+
+            halt();
+            setColor('idle');
+
+            $('workout').hidden = true;
+            $('setup').hidden = false;
+            $('startBtn').hidden = false;
+        }
+
+        function goTo(index) {
+            run.index = Math.max(0, Math.min(index, run.segments.length - 1));
+            const seg = run.segments[run.index];
+
+            run.remaining = seg.duration * 1000;
+            run.endTime = performance.now() + run.remaining;
+            run.lastSecond = Math.ceil(seg.duration);
+
+            const items = $('timeline').children;
+            for (let i = 0; i < items.length; i++) {
+                items[i].classList.toggle('past', i < run.index);
+                items[i].classList.toggle('current', i === run.index);
+                if (i !== run.index) {
+                    items[i].querySelector('.time').textContent = formatTime(run.segments[i].duration * 1000);
                 }
-
-                document.getElementById('volume').value = volume;
-
-                beep();
             }
 
-            function pause() {
-                orderList[0].obj.pause();
-                
-                if (orderList[0].obj.running) {
-                    document.getElementById('startButton').innerHTML = "pause_circle_filled";
-                    document.getElementById('flip-container').classList.toggle('flipped');
-                    document.getElementById('timerRunningIndicator').style.visibility = 'hidden';
-                    noSleep.enable();
-                } else {
-                    document.getElementById('startButton').innerHTML = "play_circle_filled";
-                    document.getElementById('flip-container').classList.toggle('flipped');
-                    document.getElementById('timerRunningIndicator').style.visibility = 'unset';
-                    noSleep.disable();
+            $('lapInfo').textContent = seg.lap ? 'Lap ' + seg.lap + '/' + settings.laps : '';
+            setColor(seg.type);
+            centerCurrent();
+
+            if (seg.type === 'done') {
+                halt();
+            }
+
+            updateDisplay();
+            updateControls();
+        }
+
+        function tick() {
+            if (!run.running) {
+                return;
+            }
+
+            run.remaining = Math.max(0, run.endTime - performance.now());
+
+            const second = Math.ceil(run.remaining / 1000);
+            if (second !== run.lastSecond) {
+                run.lastSecond = second;
+                if (second > 0 && second <= 3) {
+                    beep();
                 }
             }
 
-            function go() {
-                orderList = [];
-                buildOrderList();
+            if (run.remaining <= 0) {
+                beepLong();
+                goTo(run.index + 1);
+            } else {
+                updateDisplay();
+            }
 
+            if (run.running) {
+                run.timer = setTimeout(tick, TICK_MS);
+            }
+        }
+
+        function resume() {
+            if (run.segments[run.index].type === 'done') {
+                startWorkout();
+                return;
+            }
+
+            ensureAudio();
+            noSleep.enable();
+            run.endTime = performance.now() + run.remaining;
+            run.running = true;
+            clearTimeout(run.timer);
+            run.timer = setTimeout(tick, TICK_MS);
+            updateControls();
+        }
+
+        function pause() {
+            run.remaining = Math.max(0, run.endTime - performance.now());
+            halt();
+        }
+
+        function halt() {
+            run.running = false;
+            clearTimeout(run.timer);
+            noSleep.disable();
+            updateControls();
+        }
+
+        function togglePlay() {
+            if (run.running) {
+                pause();
+            } else {
+                resume();
+            }
+        }
+
+        // ---------- Workout rendering ----------
+
+        function renderTimeline() {
+            const timeline = $('timeline');
+            timeline.replaceChildren();
+            timeline.style.transition = 'none';
+
+            run.segments.forEach(seg => {
+                const item = document.createElement('li');
+                item.className = 'item ' + seg.type;
+
+                const meta = document.createElement('div');
+                meta.className = 'meta';
+                meta.textContent = seg.meta;
+
+                const name = document.createElement('div');
+                name.className = 'name';
+                name.textContent = seg.name;
+
+                const time = document.createElement('div');
+                time.className = 'time';
+                time.textContent = formatTime(seg.duration * 1000);
+
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+
+                item.append(meta, name, time, bar);
+                timeline.append(item);
+            });
+
+            // Re-enable the scroll animation after the initial position is applied.
+            requestAnimationFrame(() => requestAnimationFrame(() => { timeline.style.transition = ''; }));
+        }
+
+        function centerCurrent() {
+            const item = $('timeline').children[run.index];
+            if (!item) {
+                return;
+            }
+            const viewport = $('viewport');
+            const offset = item.offsetTop + item.offsetHeight / 2 - viewport.clientHeight / 2;
+            $('timeline').style.transform = 'translateY(' + (-offset) + 'px)';
+        }
+
+        function updateDisplay() {
+            const seg = run.segments[run.index];
+            const item = $('timeline').children[run.index];
+
+            item.querySelector('.time').textContent = formatTime(run.remaining);
+            const progress = seg.duration > 0 ? 1 - run.remaining / (seg.duration * 1000) : 1;
+            item.querySelector('.bar').style.width = (progress * 100) + '%';
+
+            let total = run.remaining;
+            for (let i = run.index + 1; i < run.segments.length; i++) {
+                total += run.segments[i].duration * 1000;
+            }
+            $('totalLeft').textContent = seg.type === 'done' ? '' : formatTime(total) + ' left';
+        }
+
+        function updateControls() {
+            const done = run.segments[run.index]?.type === 'done';
+            const icon = done ? 'replay' : run.running ? 'pause' : 'play_arrow';
+
+            $('playBtn').querySelector('.material-icons').textContent = icon;
+            $('playBtn').setAttribute('aria-label', done ? 'Restart' : run.running ? 'Pause' : 'Resume');
+            $('prevBtn').disabled = run.index === 0;
+            $('nextBtn').disabled = done;
+            $('workout').classList.toggle('paused', !run.running && !done);
+        }
+
+        function setColor(type) {
+            const color = COLORS[type] ?? COLORS.idle;
+            document.body.style.backgroundColor = color;
+            document.querySelector('meta[name=theme-color]').content = color;
+        }
+
+        function formatTime(ms) {
+            const total = Math.ceil(ms / 1000);
+            const minutes = Math.floor(total / 60);
+            const seconds = total % 60;
+            return minutes + ':' + String(seconds).padStart(2, '0');
+        }
+
+        // ---------- Audio ----------
+
+        let audio = null;
+
+        // Browsers only allow audio after a user gesture, so create/resume lazily from click handlers.
+        function ensureAudio() {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!audio && Ctx) {
+                audio = new Ctx();
+            }
+            if (audio?.state === 'suspended') {
                 audio.resume();
-                noSleep.enable();
-                
-                orderList[0].obj.start();
-                
-                document.getElementById('restoreButton').style.display = '';
-
-                document.getElementById('flip-container').classList.add('flipped');
-
-                document.getElementById('startButton').innerHTML = "pause_circle_filled";
-                document.getElementById('startButton').onmousedown = pause;
-
-                document.getElementById('timerRunningIndicator').innerHTML = 'TIMER RUNNING';
             }
+        }
 
-            function buildOrderList() {
-                var laps = readNumber('laps', defaultSettings.laps);
-                var exercises = readNumber('exercises', defaultSettings.exercises);
-                var activeTime = readNumber('activeTime', defaultSettings.exerciseTime);
-                var pauseTime = readNumber('pauseTime', defaultSettings.exercisePause);
-                var extendedPauseTime = readNumber('extendedPauseTime', defaultSettings.lapPause);
-
-                orderList.push({text:'', obj: new Prepare(5)});
-
-                for (let x = 0; x < laps; x += 1) {
-                    for (let y = 0; y < exercises; y += 1) {
-                        orderList.push({text: 'Lap ' + (x + 1) + '/' + laps + ' - Exercise ' + (y + 1) + '/' + exercises, obj: new Active(activeTime)});
-
-                        if (y < exercises - 1) {
-                            orderList.push({text: 'Lap ' + (x + 1) + '/' + laps + ' - Next: exercise ' + (y + 2) + '/' + exercises, obj: new Pause(pauseTime)});
-                        }
-
-                    }
-                    if (x <  laps - 1) {
-                        orderList.push({text: 'Lap break ' + (x + 1) + '/' + laps, obj: new Pause(extendedPauseTime)});
-                    }
-                }
+        function tone(frequency, durationMs) {
+            if (!audio || settings.volume <= 0) {
+                return;
             }
+            const oscillator = audio.createOscillator();
+            const gain = audio.createGain();
+            oscillator.type = 'square';
+            oscillator.frequency.value = frequency;
+            gain.gain.value = settings.volume * 0.01;
+            oscillator.connect(gain);
+            gain.connect(audio.destination);
+            oscillator.start(audio.currentTime);
+            oscillator.stop(audio.currentTime + durationMs / 1000);
+        }
 
+        function beep() { tone(440, 150); }
+        function beepLong() { tone(880, 300); }
 
-            class Timer {
+        // ---------- Wiring ----------
 
-                constructor (duration) {
-                    // Remaining time in ms. Recomputed from a wall-clock end time each tick so delays don't accumulate.
-                    this.duration = duration * 1000;
+        renderExercises();
+        bindNumberInput('laps', 'laps', 1);
+        bindNumberInput('workTime', 'workTime', 1);
+        bindNumberInput('exercisePause', 'exercisePause', 0);
+        bindNumberInput('lapPause', 'lapPause', 0);
+        updateSummary();
 
-                    this.running = false;
-                    this.timeoutLength = 100;
-                    this.lastSecond = null;
-                }
+        $('volume').value = settings.volume;
+        $('volume').addEventListener('input', () => {
+            settings.volume = Number($('volume').value);
+            saveSettings();
+        });
+        $('volume').addEventListener('change', () => {
+            ensureAudio();
+            beep();
+        });
 
-                start() {
-                    this.running = true;
-                    this.endTime = performance.now() + this.duration;
-                    this.onStart();
-                    this.tick();
-                    this.timeout();
-                }
-
-                timeout() {
-                    this.currentTimeout = setTimeout(() => {
-                        if (!this.running) {
-                            return;
-                        }
-
-                        this.duration = Math.max(0, this.endTime - performance.now());
-                        if (this.duration <= 0) {
-                            this.onDone();
-                            this.running = false;
-                            this.onEnd();
-                        } else {
-                            this.tick();
-                            this.timeout();
-                        }
-                    }, this.timeoutLength);
-                }
-
-                tick() {
-                    this.onTimeout();
-
-                    // Beep once as each of the last 3 seconds begins.
-                    const second = Math.ceil(this.duration / 1000);
-                    if (second !== this.lastSecond) {
-                        this.lastSecond = second;
-                        if (second <= 3) {
-                            beep();
-                        }
-                    }
-                }
-
-                onStart() {}
-
-                onTimeout() {}
-
-                onDone() {}
-
-                pause() {
-                    if (this.running) {
-                        clearTimeout(this.currentTimeout);
-                        this.duration = Math.max(0, this.endTime - performance.now());
-                        this.running = false;
-                    } else {
-                        this.running = true;
-                        this.endTime = performance.now() + this.duration;
-                        this.timeout();
-                    }
-                }
-
-                onEnd() {
-                    self.dispatchEvent(new CustomEvent("done"));
-                }
+        $('addForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const input = $('newExercise');
+            const name = input.value.trim();
+            if (!name) {
+                return;
             }
+            settings.exercises.push(name);
+            input.value = '';
+            saveSettings();
+            renderExercises();
+            input.focus();
+        });
 
-            class Active extends Timer {
-                onTimeout() {
-                    document.getElementById('statusText').innerHTML = "WORK IT";
-                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                }
-
-                onDone() {
-                    document.getElementById('timeLeft').innerHTML = "Finished";
-                    beepLong();
-                }
-
-                onStart() {
-                    document.getElementById('body').style.backgroundColor = '#8fe094';
-                    document.getElementsByTagName('meta')[1].content = '#8fe094';
-                }
-            }
-
-
-            class Pause extends Timer {
-                onTimeout() {
-                    document.getElementById('statusText').innerHTML = "PAUSE";
-                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                }
-
-                onDone() {
-                    document.getElementById('timeLeft').innerHTML = "Finished";
-                    beepLong();
-                }
-
-                onStart() {
-                    document.getElementById('body').style.backgroundColor = '#e08f8f';
-                    document.getElementsByTagName('meta')[1].content = '#e08f8f';
-                }
-            }
-
-
-            class Prepare extends Timer {
-                onTimeout() {
-                    document.getElementById('statusText').innerHTML = "PREPARE";
-                    document.getElementById('timeLeft').innerHTML = secondsToPresentableString(this.duration / 1000);
-                }
-
-                onDone() {
-                    beepLong();
-                }
-            }
-
-
-            function secondsToPresentableString(inputSeconds) {
-                inputSeconds = Math.ceil(inputSeconds);
-                var minutes = Math.floor(inputSeconds/60);
-                var seconds = inputSeconds - minutes * 60;
-
-                return zeroPrefixIfSingleDigit(minutes) + ':' + zeroPrefixIfSingleDigit(seconds);
-            }
-
-            function zeroPrefixIfSingleDigit(number) {
-                if (number < 0) {
-                    throw "WTF FAULTY INPUT";
-                }
-
-                if (number < 10) {
-                    return "0" + number;
-                } else {
-                    return String(number);
-                }
-            }
-
-            function beep() {
-                k(volume, 440, 150);
-            }
-
-            function beepLong() {
-                k(volume, 880, 300);
-            }
-
-            // gain, frequency, duration
-
-            var audio = new AudioContext();
-            function k(volume, frequency, duration){
-                
-                var oscillator = audio.createOscillator();
-                var gain = audio.createGain();
-
-                oscillator.connect(gain);
-                oscillator.frequency.value = frequency;
-                oscillator.type = "square";
-                gain.connect(audio.destination);
-                gain.gain.value = volume * 0.01;
-                oscillator.start(audio.currentTime);
-                oscillator.stop(audio.currentTime + duration * 0.001);
-            }
-
-        </script>
-    </body>
+        $('startBtn').addEventListener('click', startWorkout);
+        $('stopBtn').addEventListener('click', stopWorkout);
+        $('playBtn').addEventListener('click', togglePlay);
+        $('prevBtn').addEventListener('click', () => goTo(run.index - 1));
+        $('nextBtn').addEventListener('click', () => goTo(run.index + 1));
+        window.addEventListener('resize', centerCurrent);
+    </script>
+</body>
 </html>
