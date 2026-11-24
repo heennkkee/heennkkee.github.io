@@ -415,7 +415,6 @@
         </footer>
     </main>
 
-    <script src="NoSleep.min.js"></script>
     <script src="momentum.js"></script>
     <script>
         const PREPARE_SECONDS = 5;
@@ -440,7 +439,6 @@
         };
 
         const $ = id => document.getElementById(id);
-        const noSleep = new NoSleep();
 
         let settings = loadSettings();
 
@@ -662,6 +660,7 @@
             }
 
             halt();
+            keepAwake(false);
             setColor('idle');
 
             $('workout').hidden = true;
@@ -692,6 +691,7 @@
 
             if (seg.type === 'done') {
                 halt();
+                keepAwake(false);
             }
 
             updateDisplay();
@@ -732,7 +732,7 @@
             }
 
             ensureAudio();
-            noSleep.enable();
+            keepAwake(true);
             run.endTime = performance.now() + run.remaining;
             run.running = true;
             clearTimeout(run.timer);
@@ -748,7 +748,6 @@
         function halt() {
             run.running = false;
             clearTimeout(run.timer);
-            noSleep.disable();
             updateControls();
         }
 
@@ -842,6 +841,52 @@
             const seconds = total % 60;
             return minutes + ':' + String(seconds).padStart(2, '0');
         }
+
+        // ---------- Screen wake lock ----------
+
+        // The browser releases the lock whenever the page is hidden, so it is re-requested when visible again.
+        const wake = { wanted: false, lock: null, pending: false };
+
+        function keepAwake(on) {
+            wake.wanted = on;
+            if (on) {
+                requestWakeLock();
+            } else if (wake.lock) {
+                wake.lock.release();
+                wake.lock = null;
+            }
+        }
+
+        async function requestWakeLock() {
+            if (!('wakeLock' in navigator) || wake.lock || wake.pending || document.visibilityState !== 'visible') {
+                return;
+            }
+
+            wake.pending = true;
+            try {
+                const lock = await navigator.wakeLock.request('screen');
+                if (!wake.wanted) {
+                    lock.release();
+                    return;
+                }
+                wake.lock = lock;
+                lock.addEventListener('release', () => {
+                    if (wake.lock === lock) {
+                        wake.lock = null;
+                    }
+                });
+            } catch (ex) {
+                console.log('Wake lock failed:', ex);
+            } finally {
+                wake.pending = false;
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (wake.wanted) {
+                requestWakeLock();
+            }
+        });
 
         // ---------- Audio ----------
 
